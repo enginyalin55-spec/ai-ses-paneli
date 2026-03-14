@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>AI Seslendirme Paneli</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap');
+    body { font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; }
+
+    .cinema-screen {
+      background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
+      aspect-ratio: 16 / 9;
+      position: relative; overflow: hidden;
+      border-radius: 1.5rem;
+      box-shadow: inset 0 0 80px rgba(0,0,0,0.5);
+    }
+    .text-overlay {
+      position: absolute; bottom: 10%; left: 5%; right: 5%;
+      text-align: center; color: white;
+      text-shadow: 2px 2px 8px rgba(0,0,0,0.8);
+      font-weight: 600; font-size: 1rem; opacity: 0.9;
+    }
+    .btn-primary { background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); }
+
+    .btn-mode {
+      transition: all 0.2s;
+      border: 2px solid #e2e8f0;
+      background: white; color: #64748b;
+      font-weight: 700; font-size: 0.75rem;
+      padding: 0.5rem 1rem; border-radius: 0.75rem;
+      cursor: pointer; text-transform: uppercase;
+    }
+    .btn-mode.active-mode {
+      background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+      color: white; border-color: transparent;
+    }
+
+    #lineList { display: flex; flex-direction: column; gap: 10px; }
+
+    .line-row {
+      display: flex; align-items: flex-start; gap: 8px;
+      background: #f8fafc; border: 1px solid #e2e8f0;
+      border-radius: 16px; padding: 10px;
+    }
+    .line-num {
+      min-width: 24px; height: 24px;
+      background: #e2e8f0; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 11px; font-weight: 700; color: #64748b;
+      margin-top: 6px; flex-shrink: 0;
+    }
+    .line-text {
+      flex: 1; padding: 8px; border-radius: 10px;
+      border: 1px solid #e2e8f0; background: white;
+      font-size: 13px; color: #334155; resize: vertical;
+      font-family: 'Inter', sans-serif;
+    }
+    .line-text:focus { outline: none; border-color: #3b82f6; }
+
+    .line-controls {
+      display: flex; flex-direction: column; gap: 5px;
+      flex-shrink: 0; min-width: 145px;
+    }
+    .line-voice {
+      padding: 6px 8px; border-radius: 10px;
+      border: 1px solid #e2e8f0; background: white;
+      font-size: 11px; font-weight: 700; color: #334155;
+      cursor: pointer; width: 100%;
+    }
+    .btn-apply-all {
+      padding: 4px 8px; border-radius: 8px;
+      background: #f1f5f9; border: 1px solid #e2e8f0;
+      font-size: 10px; font-weight: 700; color: #475569;
+      cursor: pointer; text-align: center;
+    }
+    .btn-apply-all:hover { background: #e2e8f0; }
+    .btn-del {
+      padding: 4px 8px; border-radius: 8px;
+      background: #fff1f2; border: 1px solid #fecdd3;
+      font-size: 11px; font-weight: 700; color: #e11d48;
+      cursor: pointer; text-align: center;
+    }
+    .btn-del:hover { background: #ffe4e6; }
+    .btn-add-line {
+      width: 100%; padding: 10px;
+      border: 2px dashed #cbd5e1; border-radius: 14px;
+      background: white; color: #64748b;
+      font-size: 13px; font-weight: 700;
+      cursor: pointer; transition: all 0.2s;
+    }
+    .btn-add-line:hover { border-color: #3b82f6; color: #3b82f6; background: #eff6ff; }
+
+    .debug-panel {
+      font-family: monospace; font-size: 11px;
+      background: #000; color: #4ade80;
+      padding: 12px; border-radius: 12px;
+      max-height: 220px; overflow-y: auto;
+      margin-top: 12px; border: 1px solid #333;
+    }
+    .log-entry {
+      margin-bottom: 4px; border-bottom: 1px solid #111;
+      padding-bottom: 4px; word-break: break-word;
+    }
+  </style>
+</head>
+<body class="bg-slate-50 min-h-screen p-4 md:p-8">
+  <div class="max-w-4xl mx-auto space-y-6">
+    <h1 class="text-2xl font-black text-slate-800 tracking-tight italic uppercase text-center">
+      🎙️ AI SES PANELİ
+    </h1>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+      <!-- SOL PANEL -->
+      <div class="space-y-4">
+        <div class="bg-white p-6 rounded-[2rem] shadow-sm border border-slate-200 space-y-4">
+
+          <!-- Mod -->
+          <div class="flex gap-2">
+            <button id="modeSingle" class="btn-mode active-mode flex-1">🎤 Tek Ses</button>
+            <button id="modeMulti"  class="btn-mode flex-1">🎭 Diyalog Modu</button>
+          </div>
+
+          <!-- Resim Yükle -->
+          <label for="fileInput"
+                 class="flex items-center justify-center w-full py-4 border-2 border-dashed border-slate-200 rounded-2xl hover:border-blue-500 hover:bg-blue-50 cursor-pointer transition-all">
+            <span class="text-xs font-bold text-slate-500 uppercase">🖼️ Resimden Metin Oku</span>
+            <input type="file" id="fileInput" class="hidden" accept="image/*">
+          </label>
+
+          <!-- Tek Ses: Metin -->
+          <textarea id="textInput" rows="7"
+                    class="w-full p-4 rounded-2xl border border-slate-100 bg-slate-50 outline-none text-slate-700 font-medium"
+                    placeholder="Metninizi yazın..."></textarea>
+
+          <div class="text-xs text-slate-400 px-1"><span id="charCount">0 karakter</span></div>
+
+          <!-- Tek Ses: Ayarlar -->
+          <div id="singleControls" class="grid grid-cols-2 gap-3">
+            <select id="voiceSelect" class="p-3 rounded-xl border border-slate-200 bg-white text-sm font-bold">
+              <option value="Kore">Kore (Kadın, Dengeli)</option>
+              <option value="Zephyr">Zephyr (Kadın, Sıcak)</option>
+              <option value="Leda">Leda (Kadın, Yumuşak)</option>
+              <option value="Charon">Charon (Erkek, Derin)</option>
+              <option value="Puck">Puck (Erkek, Neşeli)</option>
+              <option value="Fenrir">Fenrir (Erkek, Güçlü)</option>
+              <option value="Orus">Orus (Erkek, Dengeli)</option>
+            </select>
+            <select id="speedSelect" class="p-3 rounded-xl border border-slate-200 bg-white text-sm font-bold">
+              <option value="slow">Yavaş</option>
+              <option value="normal" selected>Normal</option>
+              <option value="fast">Hızlı</option>
+            </select>
+          </div>
+
+          <!-- Diyalog Modu: Satır Editörü -->
+          <div id="lineEditor" class="hidden space-y-3">
+            <div class="flex items-center justify-between px-1">
+              <p class="text-xs font-black text-slate-500 uppercase">🎭 Satır & Ses Ataması</p>
+              <select id="speedSelect2" class="p-2 rounded-xl border border-slate-200 bg-white text-xs font-bold">
+                <option value="slow">Yavaş</option>
+                <option value="normal" selected>Normal</option>
+                <option value="fast">Hızlı</option>
+              </select>
+            </div>
+            <div id="lineList"></div>
+          </div>
+
+          <!-- Buton -->
+          <button id="generateBtn"
+                  class="w-full btn-primary text-white font-black py-4 rounded-2xl shadow-lg flex items-center justify-center gap-3 disabled:opacity-60">
+            <span id="btnText">SESE DÖNÜŞTÜR</span>
+          </button>
+
+        </div>
+
+        <!-- Debug -->
+        <div id="debugPanel" class="debug-panel hidden">
+          <div id="debugContent"></div>
+        </div>
+      </div>
+
+      <!-- SAĞ PANEL -->
+      <div class="space-y-4">
+        <div class="bg-white p-4 rounded-[2.5rem] shadow-sm border border-slate-200 space-y-4">
+          <div class="cinema-screen">
+            <div id="videoSubtitle" class="text-overlay">Hazırlanıyor...</div>
+          </div>
+          <div id="playerControls" class="hidden space-y-4">
+            <audio id="audioPlayer" controls class="w-full"></audio>
+            <a id="downloadLink" class="text-xs font-black text-blue-600 uppercase cursor-pointer">İndir (.wav)</a>
+          </div>
+          <div id="errorBox" class="hidden p-4 rounded-2xl border border-red-200 bg-red-50 text-red-700 text-sm whitespace-pre-line"></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+  <script>
+    document.getElementById("speedSelect2").addEventListener("change", function() {
+      document.getElementById("speedSelect").value = this.value;
+    });
+  </script>
+</body>
+</html>
